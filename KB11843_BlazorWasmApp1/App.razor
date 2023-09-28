@@ -1,0 +1,30 @@
+﻿@inject IJSRuntime JSRuntime
+
+<button @onclick="DownloadExcelButtonClick">エクセルファイルを作成＆ダウンロードする</button>
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (Workbook.InProcessRuntime == null) Workbook.InProcessRuntime = this.JSRuntime as IJSInProcessRuntime;
+    }
+
+    private async void DownloadExcelButtonClick()
+    {
+        var wb = new Workbook(WorkbookFormat.Excel2007);
+        var ws = wb.Worksheets.Add("sheet1");
+        ws.GetCell("A1").Value = "test1";
+
+        using(var memoryStream = new MemoryStream())
+        {
+            wb.Save(memoryStream);
+            var workBookBytes = memoryStream.ToArray();
+
+            await this.JSRuntime.InvokeVoidAsync("downloadFromByteArray", new
+            {
+                byteArray = workBookBytes,
+                FileName = "test.xlsx",
+                ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            });
+        }
+    }
+}
